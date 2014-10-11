@@ -1,13 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(Selene)
 
-set(LUA_INCLUDE_DIR "" CACHE FILEPATH "Path to lua headers")
-
-if(${LUA_INCLUDE_DIR})
-  if(NOT EXISTS ${LUA_INCLUDE_DIR}/lua.h)
-    message(SEND_ERROR "Can't find lua.h in ${LUA_INCLUDE_DIR}")
-  endif()
-endif()
+find_package(Lua52 REQUIRED)
 
 include_directories(${LUA_INCLUDE_DIR})
 
@@ -24,4 +18,4 @@ file(GLOB headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   include/*.h include/selene/*.h)
 
 add_executable(test_runner ${CMAKE_CURRENT_SOURCE_DIR}/test/Test.cpp)
-target_link_libraries(test_runner lua)
+target_link_libraries(test_runner ${LUA_LIBRARIES})
