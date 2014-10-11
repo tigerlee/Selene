@@ -122,6 +122,15 @@ public:
         lua_settop(_state, 0);
     }
 
+    void operator=(char c) const {
+        _traverse();
+        auto push = [this, c]() {
+            detail::_push(_state, c);
+        };
+        _put(push);
+        lua_settop(_state, 0);
+    }
+
     void operator=(int i) const {
         _traverse();
         auto push = [this, i]() {
@@ -135,6 +144,24 @@ public:
         _traverse();
         auto push = [this, i]() {
             detail::_push(_state, i);
+        };
+        _put(push);
+        lua_settop(_state, 0);
+    }
+
+    void operator=(long i) const {
+        _traverse();
+        auto push = [this, i]() {
+            detail::_push(_state, i);
+        };
+        _put(push);
+        lua_settop(_state, 0);
+    }
+
+    void operator=(long unsigned int u) const {
+        _traverse();
+        auto push = [this, u]() {
+            detail::_push(_state, u);
         };
         _put(push);
         lua_settop(_state, 0);
@@ -254,6 +281,18 @@ public:
         return ret;
     }
 
+    operator char() const {
+        _traverse();
+        _get();
+        if (_functor != nullptr) {
+            (*_functor)(1);
+            _functor.reset();
+        }
+        auto ret = detail::_pop(detail::_id<char>{}, _state);
+        lua_settop(_state, 0);
+        return ret;
+    }
+
     operator int() const {
         _traverse();
         _get();
@@ -274,6 +313,30 @@ public:
             _functor.reset();
         }
         auto ret = detail::_pop(detail::_id<unsigned int>{}, _state);
+        lua_settop(_state, 0);
+        return ret;
+    }
+
+    operator long() const {
+        _traverse();
+        _get();
+        if (_functor != nullptr) {
+            (*_functor)(1);
+            _functor.reset();
+        }
+        auto ret = detail::_pop(detail::_id<long>{}, _state);
+        lua_settop(_state, 0);
+        return ret;
+    }
+
+    operator long unsigned int () const {
+        _traverse();
+        _get();
+        if (_functor != nullptr) {
+            (*_functor)(1);
+            _functor.reset();
+        }
+        auto ret = detail::_pop(detail::_id<long unsigned int>{}, _state);
         lua_settop(_state, 0);
         return ret;
     }

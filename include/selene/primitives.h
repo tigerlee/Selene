@@ -22,11 +22,23 @@ struct is_primitive {
     static constexpr bool value = false;
 };
 template <>
+struct is_primitive<char> {
+    static constexpr bool value = true;
+};
+template <>
 struct is_primitive<int> {
     static constexpr bool value = true;
 };
 template <>
 struct is_primitive<unsigned int> {
+    static constexpr bool value = true;
+};
+template <>
+struct is_primitive<long> {
+    static constexpr bool value = true;
+};
+template <>
+struct is_primitive<long unsigned int> {
     static constexpr bool value = true;
 };
 template <>
@@ -53,6 +65,10 @@ inline bool _get(_id<bool>, lua_State *l, const int index) {
     return lua_toboolean(l, index) != 0;
 }
 
+inline char _get(_id<char>, lua_State *l, const int index) {
+    return *lua_tostring(l, index);
+}
+
 inline int _get(_id<int>, lua_State *l, const int index) {
     return lua_tointeger(l, index);
 }
@@ -62,6 +78,18 @@ inline unsigned int _get(_id<unsigned int>, lua_State *l, const int index) {
     return lua_tounsigned(l, index);
 #else
     return static_cast<unsigned>(lua_tointeger(l, index));
+#endif
+}
+
+inline long _get(_id<long>, lua_State *l, const int index) {
+  return lua_tointeger(l, index);
+}
+
+inline long unsigned int _get(_id<long unsigned int>, lua_State *l, const int index) {
+#if LUA_VERSION_NUM >= 502
+    return lua_tounsigned(l, index);
+#else
+    return static_cast<long unsigned>(lua_tointeger(l, index));
 #endif
 }
 
@@ -87,6 +115,10 @@ inline T& _check_get(_id<T&>, lua_State *l, const int index) {
     return *(T *)lua_topointer(l, index);
 };
 
+inline char _check_get(_id<char>, lua_State *l, const int index) {
+    return *luaL_checkstring(l, index);
+};
+
 inline int _check_get(_id<int>, lua_State *l, const int index) {
     return luaL_checkint(l, index);
 };
@@ -97,6 +129,14 @@ inline unsigned int _check_get(_id<unsigned int>, lua_State *l, const int index)
 #else
     return static_cast<unsigned>(luaL_checkint(l, index));
 #endif
+}
+
+inline long _check_get(_id<long>, lua_State *l, const int index) {
+    return luaL_checklong(l, index);
+}
+
+inline long unsigned int _check_get(_id<long unsigned int>, lua_State *l, const int index) {
+    return luaL_checklong(l, index);
 }
 
 inline lua_Number _check_get(_id<lua_Number>, lua_State *l, const int index) {
@@ -235,6 +275,10 @@ inline void _push(lua_State *l, MetatableRegistry &, bool b) {
     lua_pushboolean(l, b);
 }
 
+inline void _push(lua_State *l, MetatableRegistry &, char c) {
+    lua_pushlstring(l, &c, 1);
+}
+
 inline void _push(lua_State *l, MetatableRegistry &, int i) {
     lua_pushinteger(l, i);
 }
@@ -244,6 +288,18 @@ inline void _push(lua_State *l, MetatableRegistry &, unsigned int u) {
     lua_pushunsigned(l, u);
 #else
     lua_pushinteger(l, static_cast<int>(u));
+#endif
+}
+
+inline void _push(lua_State *l, MetatableRegistry &, long i) {
+    lua_pushinteger(l, i);
+}
+
+inline void _push(lua_State *l, MetatableRegistry &, long unsigned int u) {
+#if LUA_VERSION_NUM >= 502
+    lua_pushunsigned(l, u);
+#else
+    lua_pushinteger(l, static_cast<long>(u));
 #endif
 }
 
@@ -278,6 +334,10 @@ inline void _push(lua_State *l, bool b) {
     lua_pushboolean(l, b);
 }
 
+inline void _push(lua_State *l, char c) {
+    lua_pushlstring(l, &c, 1);
+}
+
 inline void _push(lua_State *l, int i) {
     lua_pushinteger(l, i);
 }
@@ -288,6 +348,14 @@ inline void _push(lua_State *l, unsigned int u) {
 #else
     lua_pushinteger(l, static_cast<int>(u));
 #endif
+}
+
+inline void _push(lua_State *l, long i) {
+    lua_pushinteger(l, i);
+}
+
+inline void _push(lua_State *l, long unsigned int u) {
+    lua_pushinteger(l, u);
 }
 
 inline void _push(lua_State *l, lua_Number f) {
