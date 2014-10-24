@@ -3,6 +3,7 @@
 #include <string>
 #include "traits.h"
 #include "MetatableRegistry.h"
+#include "Value.h"
 
 extern "C" {
 #include <lua.h>
@@ -103,6 +104,30 @@ inline std::string _get(_id<std::string>, lua_State *l, const int index) {
     return std::string{buff, size};
 }
 
+inline Value _get(_id<Value>, lua_State *l, const int index) {
+  if (lua_isnil(l, index))     { return Value(); }
+  if (lua_isboolean(l, index)) { return Value(_get(_id<bool>{}, l, index)); }
+  if (lua_isnumber(l, index))  { return Value(_get(_id<double>{}, l, index)); }
+  if (lua_isstring(l, index))  { return Value(_get(_id<std::string>{}, l, index)); }
+  if (lua_istable(l, index)) {
+    Table t;
+    luaL_checktype(l, index, LUA_TTABLE);
+    lua_pushnil(l);
+    while (lua_next(l, -2)) {
+      if (lua_isnumber(l, -2)) {
+        int idx = _get(_id<int>{}, l, -2);
+        t[idx] = _get(_id<Value>{}, l, -1);
+      } else if (lua_isstring(l, -2)) {
+        std::string idx = _get(_id<std::string>{}, l, -2);
+        t[idx] = _get(_id<Value>{}, l, -1);
+      }
+      lua_pop(l, 1);
+    }
+    return t;
+  }
+  return Value();
+}
+
 template <typename T>
 inline T* _check_get(_id<T*>, lua_State *l, const int index) {
     return (T *)lua_topointer(l, index);
@@ -151,6 +176,10 @@ inline std::string _check_get(_id<std::string>, lua_State *l, const int index) {
     size_t size;
     const char *buff = luaL_checklstring(l, index, &size);
     return std::string{buff, size};
+}
+
+inline Value _check_get(_id<Value>, lua_State *l, const int index) {
+  return _get(_id<Value>{}, l, index);
 }
 
 // Worker type-trait struct to _pop_n
@@ -368,6 +397,32 @@ inline void _push(lua_State *l, const std::string &s) {
 
 inline void _push(lua_State *l, const char *s) {
     lua_pushstring(l, s);
+}
+
+inline void _push(lua_State *l, Value value) {
+    if (value.IsBool())   { _push(l, value.bool_value());   }
+    if (value.IsChar())   { _push(l, value.char_value());   }
+    if (value.IsInt())    { _push(l, value.int_value());    }
+    if (value.IsLong())   { _push(l, value.long_value());   }
+    if (value.IsDouble()) { _push(l, value.double_value()); }
+    if (value.IsString()) { _push(l, value.string_value()); }
+    if (value.IsTable()) {
+        auto im = value.table_value().int_map();
+        auto sm = value.table_value().str_map();
+        lua_createtable(l, im.size(), sm.size());
+        for (auto item : im) {
+            _push(l, item.second);
+            lua_rawseti(l, -2, item.first);
+        }
+        for (auto item : sm) {
+            _push(l, item.second);
+            lua_setfield(l, -2, item.first.data());
+        }
+    }
+}
+
+inline void _push(lua_State *l, MetatableRegistry &, Value&& value) {
+  _push(l, std::forward<Value>(value));
 }
 
 template <typename T>

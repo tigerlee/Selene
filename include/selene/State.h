@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include "Registry.h"
 #include "Selector.h"
@@ -10,6 +11,12 @@
 #include <vector>
 
 namespace sel {
+inline int atpanic(lua_State* l)
+{
+  std::string err = lua_tostring(l, -1);
+  throw std::runtime_error(err);
+}
+
 class State {
 private:
     lua_State *_l;
@@ -23,9 +30,11 @@ public:
         if (_l == nullptr) throw 0;
         if (should_open_libs) luaL_openlibs(_l);
         _registry.reset(new Registry(_l));
+        lua_atpanic(_l, atpanic);
     }
     State(lua_State *l) : _l(l), _l_owner(false) {
         _registry.reset(new Registry(_l));
+        lua_atpanic(_l, atpanic);
     }
     State(const State &other) = delete;
     State &operator=(const State &other) = delete;
@@ -34,6 +43,7 @@ public:
           _l_owner(other._l_owner),
           _registry(std::move(other._registry)) {
         other._l = nullptr;
+        lua_atpanic(_l, atpanic);
     }
     State &operator=(State &&other) {
         if (&other == this) return *this;
@@ -41,6 +51,7 @@ public:
         _l_owner = other._l_owner;
         _registry = std::move(other._registry);
         other._l = nullptr;
+        lua_atpanic(_l, atpanic);
         return *this;
     }
     ~State() {
@@ -96,7 +107,7 @@ public:
 
     bool operator()(const char *code) {
         bool result = !luaL_dostring(_l, code);
-        if(result) lua_settop(_l, 0);
+        if (result) lua_settop(_l, 0);
         return result;
     }
     void ForceGC() {

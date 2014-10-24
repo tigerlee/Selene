@@ -176,10 +176,28 @@ public:
         lua_settop(_state, 0);
     }
 
+    void operator=(const char *s) const {
+        _traverse();
+        auto push = [this, s]() {
+            detail::_push(_state, std::string{s});
+        };
+        _put(push);
+        lua_settop(_state, 0);
+    }
+
     void operator=(const std::string &s) const {
         _traverse();
         auto push = [this, s]() {
             detail::_push(_state, s);
+        };
+        _put(push);
+        lua_settop(_state, 0);
+    }
+
+    void operator=(Value v) const {
+        _traverse();
+        auto push = [this, &v]() {
+            detail::_push(_state, v);
         };
         _put(push);
         lua_settop(_state, 0);
@@ -201,15 +219,6 @@ public:
             _registry.Register(fun);
         };
         _put(push);
-    }
-
-    void operator=(const char *s) const {
-        _traverse();
-        auto push = [this, s]() {
-            detail::_push(_state, std::string{s});
-        };
-        _put(push);
-        lua_settop(_state, 0);
     }
 
     template <typename T, typename... Funs>
@@ -361,6 +370,18 @@ public:
             _functor.reset();
         }
         auto ret =  detail::_pop(detail::_id<std::string>{}, _state);
+        lua_settop(_state, 0);
+        return ret;
+    }
+
+    operator Value() const {
+        _traverse();
+        _get();
+        if (_functor != nullptr) {
+            (*_functor)(1);
+            _functor.reset();
+        }
+        auto ret =  detail::_pop(detail::_id<Value>{}, _state);
         lua_settop(_state, 0);
         return ret;
     }
