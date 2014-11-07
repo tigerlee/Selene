@@ -411,12 +411,16 @@ inline void _push(lua_State *l, Value value) {
         auto sm = value.table_value().str_map();
         lua_createtable(l, im.size(), sm.size());
         for (auto item : im) {
-            _push(l, item.second);
-            lua_rawseti(l, -2, item.first);
+            if (!item.second.IsNil()) {
+              _push(l, item.second);
+              lua_rawseti(l, -2, item.first);
+            }
         }
         for (auto item : sm) {
-            _push(l, item.second);
-            lua_setfield(l, -2, item.first.data());
+            if (!item.second.IsNil()) {
+                _push(l, item.second);
+                lua_setfield(l, -2, item.first.data());
+            }
         }
     }
 }

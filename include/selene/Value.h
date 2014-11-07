@@ -39,6 +39,7 @@ class Value {
   Value(Table v);
   Value(const Value& v);
 
+  inline bool IsNil()    const { return type() == Type::Nil; }
   inline bool IsBool()   const { return type() == Type::Boolean; }
   inline bool IsChar()   const { return type() == Type::Char;    }
   inline bool IsInt()    const { return type() == Type::Integer; }
